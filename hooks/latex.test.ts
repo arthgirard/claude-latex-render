@@ -73,10 +73,18 @@ describe('texToUnicode', () => {
     expect(texToUnicode("f'(x)")).toBe('f′(x)')
   })
 
+  test('a subscript with no Unicode form goes between subscript parentheses', async () => {
+    expect(texToUnicode('S_N')).toBe('S₍N₎')
+    expect(texToUnicode('P_{C \\leftarrow B}')).toBe('P₍C ← B₎')
+    expect(texToUnicode('[b_i]_C')).toBe('[bᵢ]₍C₎')
+    expect(texToUnicode('[p]_{\\mathcal{B}}')).toBe('[p]₍ℬ₎')
+    expect(inlineToUnicode('les $[b_i]_C$, et')).toBe('les \\[bᵢ\\]₍C₎, et')
+  })
+
   test('sets, operators and fonts', async () => {
     expect(texToUnicode('\\forall x \\in \\mathbb{R}, \\exists n \\in \\mathbb{N}')).toBe('∀x ∈ ℝ, ∃n ∈ ℕ')
     expect(texToUnicode('\\sum_{i=1}^{n} i')).toBe('∑ᵢ₌₁ⁿ i')
-    expect(texToUnicode('\\lim_{x \\to 0} \\frac{\\sin x}{x}')).toBe('lim_(x → 0) (sin x)/x')
+    expect(texToUnicode('\\lim_{x \\to 0} \\frac{\\sin x}{x}')).toBe('lim₍x → 0₎ (sin x)/x')
     expect(texToUnicode('\\vec{v} \\cdot \\hat{n}')).toBe('v⃗ · n̂')
     expect(texToUnicode('\\sqrt{\\operatorname{tr}^2 A - 4\\det A}')).toBe('√(tr² A - 4 det A)')
   })
@@ -212,8 +220,8 @@ describe('styleGuide', () => {
   test('lists the subscript letters Unicode has and what happens to the rest', async () => {
     const guide = styleGuide({ pictures: true, figures: true })
     expect(guide).toContain('the letters a e h i j k l m n o p r s t u v x.')
-    expect(guide).toContain('`$S_N$` shows as `S_N`')
-    expect(guide).toContain('`$[p]_{\\mathcal{B}}$` as `[p]_ℬ`')
+    expect(guide).toContain('`$S_N$` shows as `S₍N₎`')
+    expect(guide).toContain('`$P_{C \\leftarrow B}$` as `P₍C ← B₎`')
   })
 
   test('a dark theme names its background and the colors to use', async () => {
