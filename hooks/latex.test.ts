@@ -33,6 +33,25 @@ describe('splitMath', () => {
     const text = '```tex\n$$x$$\n```\nand `$$y$$` here'
     expect(splitMath(text)).toEqual([{ kind: 'markdown', text }])
   })
+
+  test('a line holding only one inline formula is display math', async () => {
+    expect(splitMath('Donc :\n  $B = C P_{C \\leftarrow B}$ \nEt \\(x\\)\n\\(y^2\\)')).toEqual([
+      { kind: 'markdown', text: 'Donc :\n' },
+      { kind: 'display', tex: 'B = C P_{C \\leftarrow B}', source: '$B = C P_{C \\leftarrow B}$' },
+      { kind: 'markdown', text: '\nEt \\(x\\)\n' },
+      { kind: 'display', tex: 'y^2', source: '\\(y^2\\)' },
+    ])
+  })
+
+  test('a lone formula among other text, a lone number or code stays inline', async () => {
+    for (const text of ['$a$ et $b$\n', 'Soit $x$\n', '$x$ donc', '$5$\n', '\\(3.5\\)', '`$x$`\n', '- $x$\n']) {
+      expect(splitMath(text)).toEqual([{ kind: 'markdown', text }])
+    }
+  })
+
+  test('a lone formula that cannot be drawn reads as inline text again', async () => {
+    expect(segmentsToUnicode(splitMath('Donc :\n$[b_i]_C$\n'))).toBe('Donc :\n\\[bᵢ\\]₍C₎\n')
+  })
 })
 
 describe('inlineToUnicode', () => {
@@ -275,6 +294,8 @@ describe('settledLength', () => {
   })
 
   test('nothing is settled while a formula is open or its line goes on', async () => {
+    expect(settledLength('Donc\n$B = C$\nB')).toBe('Donc\n$B = C$\n'.length)
+    expect(settledLength('Donc\n$B = C$')).toBe(0)
     expect(settledLength('Take $$x^2')).toBe(0)
     expect(settledLength('Take $$x^2$$')).toBe(0)
     expect(settledLength('Take $$x^2$$ and')).toBe(0)

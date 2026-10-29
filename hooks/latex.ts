@@ -5,17 +5,21 @@ import type { Mode } from '../types'
 
 export type Segment =
   | { kind: 'markdown'; text: string }
-  | { kind: 'display'; tex: string; env?: string }
+  // `source` is the line of inline math a lone formula was written as.
+  | { kind: 'display'; tex: string; env?: string; source?: string }
   | { kind: 'figure'; tex: string }
 
 const DISPLAY_ENVS = 'equation|align|gather|multline|eqnarray|flalign|alignat'
 
 const FIGURE_ENVS = 'tikzpicture|tikzcd|axis'
 
+// A line holding nothing but one inline formula is display math too: it is
+// on a line of its own already, so drawing it as a picture costs no layout.
 const DISPLAY = new RegExp(
   String.raw`\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\\begin\{(${DISPLAY_ENVS})(\*?)\}([\s\S]*?)\\end\{\3\4\}` +
-    String.raw`|\\begin\{(${FIGURE_ENVS})\}[\s\S]*?\\end\{\6\}`,
-  'g',
+    String.raw`|\\begin\{(${FIGURE_ENVS})\}[\s\S]*?\\end\{\6\}` +
+    String.raw`|^[ \t]*(?:\\\(((?:(?!\\\)).)+)\\\)|\$(?![\s$])([^$\n]+?)(?<![\s\\])\$)[ \t]*$`,
+  'gm',
 )
 
 // A `$` glued to a digit or a letter before it, or a digit after it, is a
@@ -83,6 +87,15 @@ export function splitMath(text: string): Segment[] {
         at = start + m[0].length
         continue
       }
+      const lone = m[7] ?? m[8]
+      if (lone !== undefined) {
+        const tex = unmask(lone, spans).trim()
+        // A number stays text, as it does inline.
+        if (NUMBER.test(tex) || (m[8] !== undefined && /^[\d.,\s]+$/.test(tex))) pushText(unmask(m[0], spans))
+        else out.push({ kind: 'display', tex, source: unmask(m[0], spans).trim() })
+        at = start + m[0].length
+        continue
+      }
       const env = m[3]
       const tex = unmask(m[1] ?? m[2] ?? m[5] ?? '', spans).trim()
       if (tex === '') pushText(unmask(m[0], spans))
@@ -142,9 +155,12 @@ export function inlineToUnicode(markdown: string): string {
 /** The whole reply as markdown with every formula in Unicode, every figure as its code. */
 export function segmentsToUnicode(segments: Segment[]): string {
   return segments
-    .map(s =>
-      s.kind === 'markdown' ? inlineToUnicode(s.text) : s.kind === 'figure' ? figureToCode(s.tex) : displayToUnicode(s.tex),
-    )
+    .map(s => {
+      if (s.kind === 'markdown') return inlineToUnicode(s.text)
+      if (s.kind === 'figure') return figureToCode(s.tex)
+      // A lone line of inline math reads as it was written.
+      return s.source !== undefined ? inlineToUnicode(s.source) : displayToUnicode(s.tex)
+    })
     .join('')
 }
 

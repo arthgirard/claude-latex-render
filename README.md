@@ -4,9 +4,9 @@ A Claude Code mod that renders LaTeX math and TikZ figures in Claude's replies, 
 
 ![Claude deriving the Fourier series of a square wave: the reply streams in with a live LaTeX preview, then shows typeset equations, a pgfplots figure of the first three partial sums with the Gibbs overshoot, and a tikz-cd square for the convolution theorem; /latex switches it to source and back](assets/demo.gif)
 
-- **Display math** (`$$…$$`, `\[…\]`, `equation`, `align`, `gather`, …) is typeset with `latex` + `dvipng` and drawn as a crisp image through the kitty graphics protocol.
+- **Display math** (`$$…$$`, `\[…\]`, `equation`, `align`, `gather`, …) is typeset with `latex` + `dvipng` and drawn as a crisp image through the kitty graphics protocol. So is a line holding nothing but one inline formula.
 - **TikZ figures** (a ` ```tikz ` fenced block, or a bare `tikzpicture` or `tikzcd` environment) are compiled with `pdflatex` + `pdftocairo` and drawn the same way. A fence may hold bare commands (`\draw …;`), which are wrapped in a `tikzpicture`. `pgfplots`, `tikz-cd` and the common TikZ libraries are loaded. On a dark theme `black` is the theme's ink and `white`, along with tints like `blue!20`, turns dark. Named colors too dim for a dark background (`blue`, `navy`, `violet`, `purple`, `brown`, `teal`, `darkgray`, …) are lightened; `navy`, `darkblue`, `maroon` and the other lowercase SVG names are defined on either theme.
-- **Inline math** (`$…$`, `\(…\)`) is converted to Unicode: `$\forall x \in \mathbb{R}$` becomes `∀x ∈ ℝ`, `$x_{n+1}^2$` becomes `xₙ₊₁²`.
+- **Inline math** (`$…$`, `\(…\)`) is converted to Unicode: `$\forall x \in \mathbb{R}$` becomes `∀x ∈ ℝ`, `$x_{n+1}^2$` becomes `xₙ₊₁²`. A subscript Unicode has no form for, such as a capital, goes between subscript parentheses: `$P_{C \leftarrow B}$` becomes `P₍C ← B₎`.
 - Code blocks, inline code and prices like `$5 and $10` are left alone.
 - **Live preview.** Each display formula and figure is compiled as soon as it closes in the streaming reply and shown in a strip above the prompt (up to 12 rows, newest last) while Claude keeps writing. When the reply's text block ends it is drawn in place, the picture already made, and the strip clears.
 - Anything that fails to compile, or a terminal without image support, falls back to Unicode text (figures to their TikZ code).
